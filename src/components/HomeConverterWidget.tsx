@@ -1,27 +1,37 @@
-
-import React, { useState, useEffect } from 'react';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { 
+import React, { useState, useEffect } from "react";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue
-} from '@/components/ui/select';
-import { RefreshCw, CircleDollarSign, CircleCheck, ArrowRight } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  RefreshCw,
+  CircleDollarSign,
+  CircleCheck,
+  ArrowRight,
+} from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { useFetchFeeRate } from "@/hooks/useFetchRates";
 
 // Currency data with flags and symbols
 const currencies = [
-  { code: 'USD', country: 'United States', flag: '🇺🇸', symbol: '$' },
-  { code: 'GBP', country: 'United Kingdom', flag: '🇬🇧', symbol: '£' },
-  { code: 'AED', country: 'United Arab Emirates', flag: '🇦🇪', symbol: 'د.إ' },
+  { code: "USD", country: "United States", flag: "🇺🇸", symbol: "$" },
+  { code: "GBP", country: "United Kingdom", flag: "🇬🇧", symbol: "£" },
+  { code: "AED", country: "United Arab Emirates", flag: "🇦🇪", symbol: "د.إ" },
 ];
 
 // Fixed target currency
-const targetCurrency = { code: 'INR', country: 'India', flag: '🇮🇳', symbol: '₹' };
+const targetCurrency = {
+  code: "INR",
+  country: "India",
+  flag: "🇮🇳",
+  symbol: "₹",
+};
 
 const HomeConverterWidget = () => {
   const [sourceCurrency, setSourceCurrency] = useState(currencies[0]);
@@ -30,9 +40,15 @@ const HomeConverterWidget = () => {
   const [rate, setRate] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
 
+  const { data } = useFetchFeeRate("USD");
+  const { data: gbpData } = useFetchFeeRate("GBP");
+  const { data: aedData } = useFetchFeeRate("AED");
+
   // Find currency object by code
   const findCurrencyByCode = (code: string) => {
-    return currencies.find(currency => currency.code === code) || currencies[0];
+    return (
+      currencies.find((currency) => currency.code === code) || currencies[0]
+    );
   };
 
   // Function to fetch exchange rates
@@ -42,17 +58,21 @@ const HomeConverterWidget = () => {
       // In a real app, you would use a proper API here
       // This is a simulation of exchange rate data
       const simulatedRates = {
-        'USD-INR': 83.12,
-        'GBP-INR': 105.78,
-        'AED-INR': 22.64
+        //@ts-ignore
+        "USD-INR": data ? data.conversion_rate : 83,
+        //@ts-ignore
+        "GBP-INR": gbpData ? gbpData.conversion_rate : 104,
+        //@ts-ignore
+        "AED-INR": aedData ? aedData.conversion_rate : 20,
       };
-      
+
       const key = `${from}-${to}`;
-      const fetchedRate = simulatedRates[key as keyof typeof simulatedRates] || 0;
-      
+      const fetchedRate =
+        simulatedRates[key as keyof typeof simulatedRates] || 0;
+
       // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 600));
-      
+      await new Promise((resolve) => setTimeout(resolve, 600));
+
       setRate(fetchedRate);
       setConvertedAmount(amount * fetchedRate);
     } catch (error) {
@@ -96,7 +116,10 @@ const HomeConverterWidget = () => {
           <CircleDollarSign className="mr-2 text-theme-cyan h-5 w-5" />
           <h3 className="font-semibold text-lg font-space">Quick Convert</h3>
         </div>
-        <Badge variant="outline" className="bg-gradient-to-r from-theme-blue/20 to-theme-cyan/20 text-white border-none px-2.5 py-0.5 text-xs font-medium flex items-center gap-1 backdrop-blur-sm">
+        <Badge
+          variant="outline"
+          className="bg-gradient-to-r from-theme-blue/20 to-theme-cyan/20 text-white border-none px-2.5 py-0.5 text-xs font-medium flex items-center gap-1 backdrop-blur-sm"
+        >
           <CircleCheck className="h-3 w-3" />
           <span>Zero Fees</span>
         </Badge>
@@ -105,7 +128,9 @@ const HomeConverterWidget = () => {
         <div className="space-y-4">
           {/* You Send Section */}
           <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-300">You Send</label>
+            <label className="block text-sm font-medium text-gray-300">
+              You Send
+            </label>
             <div className="flex gap-2">
               <Input
                 type="number"
@@ -124,8 +149,8 @@ const HomeConverterWidget = () => {
                 </SelectTrigger>
                 <SelectContent className="bg-theme-dark border border-white/10 rounded-xl">
                   {currencies.map((currency) => (
-                    <SelectItem 
-                      key={currency.code} 
+                    <SelectItem
+                      key={currency.code}
                       value={currency.code}
                       className="focus:bg-theme-blue/10 focus:text-white"
                     >
@@ -139,24 +164,33 @@ const HomeConverterWidget = () => {
               </Select>
             </div>
           </div>
-          
+
           {/* Exchange Rate Display */}
           <div className="flex justify-between items-center py-1.5 px-3 rounded-xl bg-gradient-to-r from-theme-blue/5 to-theme-cyan/5 backdrop-blur-sm border border-white/5">
             <div className="text-sm text-gray-300">
-              <span>1 {sourceCurrency.code} = {rate.toFixed(2)} {targetCurrency.code}</span>
+              <span>
+                1 {sourceCurrency.code} = {rate.toFixed(2)}{" "}
+                {targetCurrency.code}
+              </span>
             </div>
-            <button 
-              onClick={handleRefresh} 
+            <button
+              onClick={handleRefresh}
               className="p-1 rounded-full hover:bg-white/10 transition-colors"
               disabled={isLoading}
             >
-              <RefreshCw className={`h-3.5 w-3.5 text-theme-cyan ${isLoading ? 'animate-spin' : ''}`} />
+              <RefreshCw
+                className={`h-3.5 w-3.5 text-theme-cyan ${
+                  isLoading ? "animate-spin" : ""
+                }`}
+              />
             </button>
           </div>
-          
+
           {/* They Receive Section */}
           <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-300">They Receive</label>
+            <label className="block text-sm font-medium text-gray-300">
+              They Receive
+            </label>
             <div className="flex gap-2">
               <Input
                 type="text"
@@ -174,9 +208,9 @@ const HomeConverterWidget = () => {
 
           {/* Button to go to full converter */}
           <div className="pt-2">
-            <Button 
+            <Button
               className="w-full gradient-btn text-white rounded-xl shadow-lg"
-              onClick={() => window.location.href = '/converter'}
+              onClick={() => (window.location.href = "/converter")}
             >
               Full Converter
               <ArrowRight className="ml-1 h-4 w-4" />
